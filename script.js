@@ -1,140 +1,64 @@
-const dayInput = document.getElementById('day');
-const monthInput = document.getElementById('month');
-const yearInput = document.getElementById('year');
-const calculateBtn = document.getElementById('calculate-btn');
-const yearsResult = document.getElementById('years');
-const monthsResult = document.getElementById('months');
-const daysResult = document.getElementById('days');
+const form = document.getElementById('age-form');
+const dob = document.getElementById('dob');
+const ageYears = document.getElementById('age-years');
+const ageMonths = document.getElementById('age-months');
+const ageDays = document.getElementById('age-days');
 
-const daysInMonth = {
-  1: 31,
-  2: 28,
-  3: 31,
-  4: 30,
-  5: 31,
-  6: 30,
-  7: 31,
-  8: 31,
-  9: 30,
-  10: 31,
-  11: 30,
-  12: 31
-};
-
-function calculateAge(e) {
+form.addEventListener('submit', function(e) {
   e.preventDefault();
 
-  const day = parseInt(dayInput.value);
-  const month = parseInt(monthInput.value);
-  const year = parseInt(yearInput.value);
+  const date = new Date(dob.value);
+  const now = new Date();
+  const age = calculateAge(date, now);
 
-  let today = new Date();
-  let birthdate = new Date(year, month - 1, day);
+  if (!isValidDate(date) || age.years < 0) {
+    showError();
+    return;
+  }
 
-  if (day === '' || month === '' || year === '') {
-    clearResults();
-    showError('Please enter all fields');
-  } else if (day < 1 || day > 31) {
-    clearResults();
-    showError('Day should be between 1-31');
-  } else if (month < 1 || month > 12) {
-    clearResults();
-    showError('Month should be between 1-12');
-  } else if (year > today.getFullYear()) {
-    clearResults();
-    showError('Year cannot be in the future');
-  } else if (day > daysInMonth[month]) {
-    clearResults();
-    showError(`There are ${daysInMonth[month]} days in ${getMonthName(month)}`);
-  } else if (birthdate > today) {
-    clearResults();
-    showError('Invalid date');
-  } else {
-    let years = today.getFullYear() - year;
-    let months = today.getMonth() - month;
-    let days = today.getDate() - day;
+  animateValue(ageYears, 0, age.years, 1000);
+  animateValue(ageMonths, 0, age.months, 1000);
+  animateValue(ageDays, 0, age.days, 1000);
+});
 
-    if (months < 0) {
+function calculateAge(dob, now) {
+    let years = now.getFullYear() - dob.getFullYear();
+    let months = now.getMonth() - dob.getMonth();
+    let days = now.getDate() - dob.getDate();
+  
+    if (months < 0 || (months === 0 && now.getDate() < dob.getDate())) {
       years--;
       months += 12;
     }
-
+  
     if (days < 0) {
-      let daysInPrevMonth = daysInMonth[today.getMonth()] || 31;
+      const daysInLastMonth = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
       months--;
-      days += daysInPrevMonth;
+      days += daysInLastMonth;
     }
-
-    yearsResult.innerText = `${years} years`;
-    monthsResult.innerText = `${months} months`;
-    daysResult.innerText = `${days} days`;
-
-    animateNumbers(years, months, days);
+  
+    return { years, months, days };
   }
+
+function isValidDate(date) {
+  return !isNaN(date.getTime());
 }
 
-function clearResults() {
-  yearsResult.innerText = '';
-  monthsResult.innerText = '';
-  daysResult.innerText = '';
+function showError() {
+  const error = document.getElementById('error');
+  error.style.display = 'block';
 }
 
-function showError(message) {
-  const errorDivs = document.getElementsByClassName('error-msg');
-
-  for (let i = 0; i < errorDivs.length; i++) {
-    errorDivs[i].innerText = message;
-  }
-}
-
-function getMonthName(monthNumber) {
-  const months = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December'
-  ];
-  return months[monthNumber - 1];
-}
-
-function animateNumbers(years, months, days) {
-  let startYears = 0;
-  let startMonths = 0;
-  let startDays = 0;
-
-  const stepYears = Math.ceil(years / 50);
-  const stepMonths = Math.ceil(months / 50);
-  const stepDays = Math.ceil(days / 50);
-
-  const intervalId = setInterval(() => {
-    startYears += stepYears;
-    startMonths += stepMonths;
-    startDays += stepDays;
-
-    if (startYears >= years) {
-      clearInterval(intervalId);
-      startYears = years;
+function animateValue(element, start, end, duration) {
+  const range = end - start;
+  let current = start;
+  const increment = end > start ? 1 : -1;
+  const stepTime = Math.abs(Math.floor(duration / range));
+  const timer = setInterval(function() {
+    current += increment;
+    element.innerHTML = current;
+    if (current == end) {
+      clearInterval(timer);
     }
-
-    if (startMonths >= months) {
-      startMonths = months;
-    }
-
-    if (startDays >= days) {
-      startDays = days;
-    }
-
-    yearsResult.innerText = `${startYears} years`;
-    monthsResult.innerText = `${startMonths} months`;
-    daysResult.innerText = `${startDays} days`;
-  }, 20);
+  }, stepTime);
 }
-
